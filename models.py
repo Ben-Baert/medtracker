@@ -1,4 +1,5 @@
 from datetime import datetime
+from datetime import timedelta
 from peewee import SqliteDatabase
 from peewee import Model
 from peewee import DateTimeField
@@ -35,7 +36,7 @@ class MedicinePrescription(BaseModel):
     stop_dt = DateTimeField(null=True)  # null: undetermined
     dosage_in_mg = IntegerField()
     frequency_per_24_hours = IntegerField()
-    
+    essential = BooleanField(default=False) 
 
 class MedicineAdministration(BaseModel):
     medicine_prescription = ForeignKeyField(MedicinePrescription, related_name='administrations')
@@ -43,5 +44,11 @@ class MedicineAdministration(BaseModel):
     dt_done = DateTimeField(default=datetime.now())
     specification = CharField(null=True)  # e.g. left side
 
+    def relevant(self):
+        return self.overdue() or self.due_soon()
+
     def overdue(self):
         return not self.dt_done and self.dt_planned > datetime.now()
+
+    def due_soon(self):
+        return not self.dt_done and self.dt_planned > datetime.now() - timedelta(hours=24)
